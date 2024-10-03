@@ -8,7 +8,7 @@ from typing import List
 DIR = "learn-cont"
 MAIN_FILE = "00-learn-cont.md"
 PREFIX = \
-"""# Learn cont
+    """# Learn cont
 This is the place to learn cont. Also, you could go look at some example code in `tests`, `examples` or
 `std` folders.
 

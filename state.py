@@ -11,6 +11,7 @@ from parsing.op import Op
 class InternalAssertionError(Exception):
     """Error used in case there is an assertion needed in cont"""
 
+
 def cont_assert(condition: bool, message: str):
     """Raise InternalAssertionError with the provided `message` if the `condition` is true"""
     if not condition:
@@ -36,13 +37,14 @@ class Block:
     stack_effect: Optional[Tuple[int, int]] = None
     binded: int = 0
 
+
 @dataclass
 class Memory:
     """A memory defined with `memo` or `memory` keyword"""
     name: str
     offset: int
 
-    global_offset = 0 # NOTE: The field doesn't have an annotation, so it's a static one
+    global_offset = 0  # NOTE: The field doesn't have an annotation, so it's a static one
 
     @staticmethod
     def new_memory(name: str, size: int) -> "Memory":
@@ -52,7 +54,8 @@ class Memory:
         """
         if State.current_proc is None:
             mem = Memory(name, Memory.global_offset)
-            Memory.global_offset += size + (8 - size % 8 if size % 8 != 0 else 0)
+            Memory.global_offset += size + \
+                (8 - size % 8 if size % 8 != 0 else 0)
             State.memories[name] = mem
         else:
             mem = Memory(name, State.current_proc.memory_size)
@@ -68,20 +71,23 @@ class Proc:
     A procedure either defined in cont code or imported from an external source.
     Whether it was imported is denoted by is_imported, which might make some fields None if it's True.
     """
+
     def __init__(
         self, name: str, ip: int, in_stack: List["Type"],
         out_stack: List["Type"], block: Block, is_named: bool,
         is_self_named: bool, owner=None
     ):
-        cont_assert(not (is_named and is_self_named), "Procedure cannot be both self-named and named.")
+        cont_assert(not (is_named and is_self_named),
+                    "Procedure cannot be both self-named and named.")
 
         self.name: str = name
         self.ip: int = ip
         self.owner: "Struct" = None if owner is None else owner.typ
-        self.in_stack: List[object] = in_stack + ([owner] if owner is not None else [])
+        self.in_stack: List[object] = in_stack + \
+            ([owner] if owner is not None else [])
         self.out_stack: List[object] = out_stack
         self.block: Block = block
-        
+
         self.is_named: bool = is_named
         self.is_self_named: bool = is_self_named
         self.is_imported: bool = False
@@ -106,7 +112,7 @@ class Proc:
         self.in_stack = in_stack
         self.out_stack = out_stack
         self.block: Block = None
-        
+
         self.is_exported: bool = False
         self.is_named: bool = False
         self.is_self_named: bool = False
@@ -120,7 +126,7 @@ class Proc:
         self.used_procs: Set[Proc] = set()
 
         return self
-    
+
     def __str__(self) -> str:
         return f"Proc({self.name}, {None if self.owner is None else self.owner.name})"
 
@@ -133,6 +139,7 @@ class StateSaver:
     A class used for storing certain state from the `State` class, while parsing included modules.
     The constructor will load in the fields automatically.
     """
+
     def __init__(self):
         self.block_stack = State.block_stack
         self.tokens = State.tokens
@@ -167,7 +174,8 @@ class State:
         cls.variables: Dict[str, "Type"] = {}  # type: ignore
         cls.procs: Dict[str, Proc] = {}
         cls.imported_procs: List[Tuple[str, str]] = []
-        cls.referenced_procs: Set[Proc] = set() # The procedures, which were used for proc pointers
+        # The procedures, which were used for proc pointers
+        cls.referenced_procs: Set[Proc] = set()
         cls.structures: Dict[str, "Struct"] = {}  # type: ignore
         cls.constants: Dict[str, int] = {}
         cls.enums: Dict[str, List[str]] = {}
@@ -209,10 +217,10 @@ class State:
         Memory.global_offset = 0
 
     UNAVAILABLE_NAMES: List[str] = [
-        "if", "else", "end", "while", "proc", "bind", 
-        *["syscall" + str(i) for i in range(7)], 
+        "if", "else", "end", "while", "proc", "bind",
+        *["syscall" + str(i) for i in range(7)],
         "+", "-", "*", "div", "dup", "drop", "swap", "rot",
-        "<", ">", "<=", ">=", "==", "!=", "!", "!8", "@", 
+        "<", ">", "<=", ">=", "==", "!=", "!", "!8", "@",
         "@8"
     ]
 
@@ -221,19 +229,20 @@ class State:
     ]
     NOT_SAME_TYPE_DUNDER_METHODS: List[str] = ["__index__", "__index_ptr__"]
     DUNDER_NEGATION_MAP: Dict[str, str] = {
-        "__eq__" : "__ne__",
-        "__gt__" : "__le__",
-        "__lt__" : "__ge__",
+        "__eq__": "__ne__",
+        "__gt__": "__le__",
+        "__lt__": "__ge__",
     }
     for from_, to in DUNDER_NEGATION_MAP.copy().items():
         DUNDER_NEGATION_MAP[to] = from_
 
-    TYPE_STRUCTS: List[str] = ["Type", "PtrType", "ArrayType", "AddrType", "Struct"]
+    TYPE_STRUCTS: List[str] = ["Type", "PtrType",
+                               "ArrayType", "AddrType", "Struct"]
     TYPE_IDS: Dict[str, int] = {
-        "int" : 0,
-        "ptr" : 1,
-        "array" : 2,
-        "addr" : 3,
+        "int": 0,
+        "ptr": 1,
+        "array": 2,
+        "addr": 3,
     }
 
     def var_types() -> Dict[str, "VarType"]:  # type: ignore
@@ -260,10 +269,11 @@ class State:
         Throws an error if it isn't. The `error` parameter indicates what was the type of the thing,
         that was supposed be named with the provided name e. g. a procedure.
         """
-        if token[0] in [*State.procs, *State.memories, 
-            *State.constants, *State.structures, *State.enums]:
+        if token[0] in [*State.procs, *State.memories,
+                        *State.constants, *State.structures, *State.enums]:
             State.loc = token[1]
-            State.throw_error(f'name for {error} "{token[0]}" is already taken')
+            State.throw_error(
+                f'name for {error} "{token[0]}" is already taken')
         if token[0] in State.UNAVAILABLE_NAMES:
             State.loc = token[1]
             State.throw_error(f'name for {error} "{token[0]}" is unavailable')
@@ -320,7 +330,7 @@ class State:
         """
         A utils method, which determines whether a given string is a valid hex number.
         The method does not need any prefixes.
-        
+
         The token of "05aF" will result in a True, meanwhile "0xa0" will result in a False. 
         """
         return all(i.lower() in "abcdef1234567890" for i in token)
@@ -330,7 +340,7 @@ class State:
         """
         A utils method, which determines whether a given string is a valid binary number.
         The method does not need any prefixes.
-        
+
         The token of "0001010" will result in a True, meanwhile "0b110" will result in a False. 
         """
         return all(i.lower() in "01" for i in token)
@@ -340,9 +350,10 @@ class State:
         """
         A utils method, which determines whether a given string is a valid octal number.
         The method does not need any prefixes.
-        
+
         The token of "163" will result in a True, meanwhile "0o120" will result in a False. 
         """
         return all(i.lower() in "01234567" for i in token)
+
 
 State.initialize()

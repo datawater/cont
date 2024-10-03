@@ -45,6 +45,7 @@ def compile_ops_fasm_x86_64_linux(ops: List[Op]):
             [f"./{out}"], stdout=sys.stdout, stdin=sys.stdin, stderr=sys.stderr
         )
 
+
 INDEX_ERROR_CODE = (
     "check_array_bounds:\n"
     ";; rax - index\n"
@@ -62,14 +63,14 @@ INDEX_ERROR_CODE = (
     "mov rsi, index_out_of_range_text\n"
     "mov rdx, 22\n"
     "syscall\n"
-    
+
     ";; write loc to stdout\n"
     "mov rax, 1\n"
     "mov rdi, 1\n"
     "mov rsi, r15\n"
     "mov rdx, r12\n"
     "syscall\n"
-    
+
     ";; exit\n"
     "mov rax, 60\n"
     "mov rdi, 1\n"
@@ -109,6 +110,7 @@ NULL_POINTER_CODE = (
     "null_ptr_if:\n"
     "ret\n"
 )
+
 
 def generate_fasm_x86_64_linux(ops: List[Op]) -> str:
     """Generates a string of fasm assembly for the program from the list of operations `ops`."""
@@ -175,7 +177,8 @@ def generate_fasm_types() -> str:
         if typ.text_repr() in generated_types:
             continue
         generated_types.add(typ.text_repr())
-        buf += generate_fasm_type(typ, queue_set, queue_list, generated_types) + "\n"
+        buf += generate_fasm_type(typ, queue_set,
+                                  queue_list, generated_types) + "\n"
     return buf
 
 
@@ -183,12 +186,12 @@ def generate_fasm_type(typ: Type, queue_set: Set[Type], queue_list: List[Type], 
     """
     Generates a fasm assembly string with the dq derictive,
     which stores the bytes for the Type struct in static memory.
-    
+
     * `typ` is the type to be runtimed.
     * `queue_set` is a queue, that includes all the types to be generated
     * `queue_list` is a queue, that includes all the types to be generated
     * `generated_types` is a set of all types, that have already been generated
-    
+
     The last three parameters should stay the same objects between
     different calls of this function in the same compilations.
     """
@@ -196,7 +199,8 @@ def generate_fasm_type(typ: Type, queue_set: Set[Type], queue_list: List[Type], 
     if isinstance(typ, Int):
         return addr + f"dq {State.TYPE_IDS['int']},8,1"
     elif isinstance(typ, Addr):
-        buf = addr + f"dq {State.TYPE_IDS['addr']},8,1,$+16,$+{8 + (len(typ.in_types) + 1) * 8}"
+        buf = addr + \
+            f"dq {State.TYPE_IDS['addr']},8,1,$+16,$+{8 + (len(typ.in_types) + 1) * 8}"
         for field in typ.in_types:
             if typ not in generated_types:
                 if field not in queue_set:
@@ -221,8 +225,8 @@ def generate_fasm_type(typ: Type, queue_set: Set[Type], queue_list: List[Type], 
                     queue_list.append(typ.typ)
             return addr + f"dq {State.TYPE_IDS['ptr']},8,1,type_{typ.typ.text_repr()}"
     elif isinstance(typ, Array):
-        cont_assert(typ.len != -1 and typ.typ is not None, 
-            "In lang(impossible to create by user) array given to generate_fasm_type")
+        cont_assert(typ.len != -1 and typ.typ is not None,
+                    "In lang(impossible to create by user) array given to generate_fasm_type")
         if typ not in generated_types:
             if typ.typ not in queue_set:
                 queue_set.add(typ.typ)
@@ -283,13 +287,14 @@ def generate_op_fasm_x86_64_linux(op: Op) -> str:
         return comment + f"push mem+{op.operand}\n"
     elif op.type == OpType.PUSH_VAR:
         return (
-            comment + f"mov rax, [mem+{State.memories[op.operand].offset}]\npush rax\n"
+            comment +
+            f"mov rax, [mem+{State.memories[op.operand].offset}]\npush rax\n"
         )
     elif op.type == OpType.PUSH_VAR_PTR:
         return comment + f"push mem+{State.memories[op.operand].offset}\n"
     elif op.type == OpType.PUSH_LOCAL_MEM:
-        cont_assert(State.current_proc is not None, 
-            "Bug in parsing of local and global memories")
+        cont_assert(State.current_proc is not None,
+                    "Bug in parsing of local and global memories")
         return comment + (
             "mov rbx, [call_stack_ptr]\n"
             "add rbx, call_stack\n"
@@ -297,8 +302,8 @@ def generate_op_fasm_x86_64_linux(op: Op) -> str:
             "push rbx\n"
         )
     elif op.type == OpType.PUSH_LOCAL_VAR:
-        cont_assert(State.current_proc is not None, 
-            "Bug in parsing of local and global memories")
+        cont_assert(State.current_proc is not None,
+                    "Bug in parsing of local and global memories")
         return comment + (
             "mov rbx, [call_stack_ptr]\n"
             "add rbx, call_stack\n"
@@ -307,8 +312,8 @@ def generate_op_fasm_x86_64_linux(op: Op) -> str:
             "push rax\n"
         )
     elif op.type == OpType.PUSH_LOCAL_VAR_PTR:
-        cont_assert(State.current_proc is not None, 
-            "Bug in parsing of local and global memories")
+        cont_assert(State.current_proc is not None,
+                    "Bug in parsing of local and global memories")
         return comment + (
             "mov rbx, [call_stack_ptr]\n"
             "add rbx, call_stack\n"
@@ -372,7 +377,8 @@ def generate_op_fasm_x86_64_linux(op: Op) -> str:
             "mov [call_stack_ptr], rbx\n"
         )
     elif op.type == OpType.ENDPROC:
-        cont_assert(State.current_proc is not None, "Bug in parsing of procedures")
+        cont_assert(State.current_proc is not None,
+                    "Bug in parsing of procedures")
         asm = comment + (
             "mov rbx, [call_stack_ptr]\n"
             "sub rbx, 8\n"
@@ -421,7 +427,8 @@ def generate_op_fasm_x86_64_linux(op: Op) -> str:
     elif op.type == OpType.CALL:
         return comment + f"call addr_{op.operand.ip}\n"
     elif op.type == OpType.TYPED_LOAD:
-        cont_assert(not isinstance(op.operand, Struct), "Bug in parsing of structure types")
+        cont_assert(not isinstance(op.operand, Struct),
+                    "Bug in parsing of structure types")
         return comment + (
             "pop rax\n"
             "mov rbx, [rax]\n"
@@ -559,7 +566,8 @@ def generate_op_fasm_x86_64_linux(op: Op) -> str:
         if State.current_proc is None:
             var: Array = State.variables[op.operand[0].name]  # type: ignore
         else:
-            var: Array = State.current_proc.variables[op.operand[0].name]  # type: ignore
+            # type: ignore
+            var: Array = State.current_proc.variables[op.operand[0].name]
         return comment + (
             ";; loop\n"
             "xor rdi, rdi\n"
@@ -620,7 +628,8 @@ def generate_op_fasm_x86_64_linux(op: Op) -> str:
     elif op.type == OpType.CAST:
         return ""  # Casts are type checking thing
     else:
-        cont_assert(False, f"Generation isn't implemented for op type: {op.type.name}")
+        cont_assert(
+            False, f"Generation isn't implemented for op type: {op.type.name}")
 
 
 def generate_operator_fasm_x86_64_linux(op: Op):
@@ -628,8 +637,10 @@ def generate_operator_fasm_x86_64_linux(op: Op):
     Generates and returns a string of assembly for an operation `op`,
     which must have the type `OpType.OPERATOR`.
     """
-    cont_assert(len(Operator) == 20, "Unimplemented operator in generate_operator_fasm_x86_64_linux")
-    cont_assert(op.type == OpType.OPERATOR, f"generate_operator_fasm_x86_64_linux cant generate {op.type.name}")
+    cont_assert(len(Operator) == 20,
+                "Unimplemented operator in generate_operator_fasm_x86_64_linux")
+    cont_assert(op.type == OpType.OPERATOR,
+                f"generate_operator_fasm_x86_64_linux cant generate {op.type.name}")
 
     if op.loc_id != -1 and State.config.re_NPD:
         call_npd_code = (
@@ -723,4 +734,5 @@ def generate_operator_fasm_x86_64_linux(op: Op):
             "push rbx\n"
         )
     else:
-        cont_assert(False, f"Generation isn't implemented for operator: {op.operand.name}")
+        cont_assert(
+            False, f"Generation isn't implemented for operator: {op.operand.name}")

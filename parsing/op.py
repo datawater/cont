@@ -71,6 +71,7 @@ class Operator(Enum):
 
 class Op:
     """An operation"""
+
     def __init__(self, type: OpType, operand=None, loc: str = "", loc_id=-1) -> None:
         self.type: OpType = type
         self.operand = operand

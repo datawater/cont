@@ -7,6 +7,7 @@ from typing import Any
 import cont
 from state import State
 
+
 class StdIOWrapper(io.TextIOBase):
     OVERWRITTEN = ["close", "__getattribute__", "__setattr__", "__delattr__"]
 
@@ -19,19 +20,21 @@ class StdIOWrapper(io.TextIOBase):
         if name in object.__getattribute__(self, "OVERWRITTEN"):
             return object.__getattribute__(self, name)
         return getattr(object.__getattribute__(self, "real_io"), name)
-    
+
     def __setattr__(self, name: str, value: Any) -> None:
         if name in object.__getattribute__(self, "OVERWRITTEN"):
             return object.__setattr__(self, name, value)
         return setattr(object.__getattribute__(self, "real_io"), name, value)
-    
+
     def __delattr__(self, name: str) -> None:
         if name in object.__getattribute__(self, "OVERWRITTEN"):
             return object.__delattr__(self, name)
         return delattr(object.__getattribute__(self, "real_io"), name)
 
+
 def mock_throw_error(error: str, do_exit: bool = True):
     assert False, error
+
 
 def main():
     orig_throw_error = State.throw_error
@@ -74,7 +77,8 @@ def main():
                         "error": value
                     }), flush=True)
             else:
-                print('{"success": false, "display": false, "error": "Command type not supported"}', flush=True)
+                print(
+                    '{"success": false, "display": false, "error": "Command type not supported"}', flush=True)
         except Exception as e:
             sys.stdout = orig_stdout
             print(json.dumps({
@@ -82,6 +86,7 @@ def main():
                 "error": f"Unhandled exception in the lsp: {traceback.format_exc()}"
             }), flush=True)
         State.throw_error = orig_throw_error
+
 
 if __name__ == "__main__":
     main()

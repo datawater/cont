@@ -11,7 +11,7 @@ assert len(Operator) == 20, "Unimplemented operator in wat64.py"
 assert len(OpType) == 40, "Unimplemented type in wat64.py"
 
 WAT64_HEADER =\
-"""
+    """
 (memory $memory {})
 (export "memory" (memory $memory))
 (func $div (param i64 i64) (result i64 i64)
@@ -64,7 +64,8 @@ WAT64_HEADER =\
 (global $heap_end (mut i64) (i64.const {}))
 """.replace("\n", "").replace("    ", "")
 LOAD_CODE = "(i32.wrap_i64) (i64.load)"
-MEMORY_PAGE_SIZE = 65536 
+MEMORY_PAGE_SIZE = 65536
+
 
 def compile_ops_wat64(ops: List[Op]):
     """
@@ -82,13 +83,15 @@ def compile_ops_wat64(ops: List[Op]):
     if subprocess.getstatusoutput("wat2wasm --version")[0] != 0:
         print("Please install wabt and wat2wasm specifically.")
         exit(1)
-    
+
     out = State.filename if State.config.out is None else State.config.out
 
     with open(f"{out}.wat", "w") as f:
         f.write(generate_wat64(ops))
 
-    subprocess.run(["wat2wasm", f"{out}.wat", "-o", f"{out}.wasm"], stdin=sys.stdin, stderr=sys.stderr)
+    subprocess.run(["wat2wasm", f"{out}.wat", "-o",
+                   f"{out}.wasm"], stdin=sys.stdin, stderr=sys.stderr)
+
 
 def byte_to_hex_code(byte: int):
     """
@@ -96,6 +99,7 @@ def byte_to_hex_code(byte: int):
     converts it to a string hex code e. g. 69 -> "\\45".
     """
     return f"\\" + (hex(byte)[2:] if byte >= 16 else '0' + hex(byte)[2:])
+
 
 def generate_type(t: Type, offset: int, buf: List[Union[int, Type]],
                   queue_set: Set[Type], queue_list: List[Type],
@@ -130,15 +134,16 @@ def generate_type(t: Type, offset: int, buf: List[Union[int, Type]],
             buf += [State.TYPE_IDS["ptr"], 8, 1, t.typ]
         offset += 32
     elif isinstance(t, Array):
-        cont_assert(t.len != -1 and t.typ is not None, 
-            "In lang(impossible to create by user) array needs to be generated")
+        cont_assert(t.len != -1 and t.typ is not None,
+                    "In lang(impossible to create by user) array needs to be generated")
         if not (t.typ in types_table or t.typ in queue_set):
             queue_set.add(t.typ)
             queue_list.append(t.typ)
         buf += [State.TYPE_IDS["array"], 8, 1, t.typ, t.len]
         offset += 40
     elif isinstance(t, Addr):
-        buf += [State.TYPE_IDS["addr"], 8, 1, offset + 40, offset + 48 + len(t.in_types) * 8]
+        buf += [State.TYPE_IDS["addr"], 8, 1, offset +
+                40, offset + 48 + len(t.in_types) * 8]
         for in_type in t.in_types:
             if not (in_type in types_table or in_type in queue_set):
                 queue_set.add(in_type)
@@ -174,11 +179,12 @@ def generate_type(t: Type, offset: int, buf: List[Union[int, Type]],
         State.throw_error("Can't get variable type runtime representation")
     return offset
 
+
 def generate_types(offset: int) -> Tuple[int, str, Dict[Type, int]]:
     """
     Generates the bytes for all the runtimed types.
     The `offset` should be the pointer to the first byte, where a type can be written.
-    
+
     Returns a tuple of the pointer to the next byte after the end of the last type,
     the string with the wat for the data instruction and the table of `Type` objects
     to their offsets. Or in other words (offset, text_buf, types_table).
@@ -188,12 +194,13 @@ def generate_types(offset: int) -> Tuple[int, str, Dict[Type, int]]:
     buf: List[Union[int, Type]] = []
     queue_set = State.runtimed_types_set.copy()
     queue_list = State.runtimed_types_list.copy()
-    
+
     while queue_list:
         t = queue_list.pop()
         queue_set.remove(t)
         types_table[t] = offset
-        offset = generate_type(t, offset, buf, queue_set, queue_list, types_table)
+        offset = generate_type(t, offset, buf, queue_set,
+                               queue_list, types_table)
 
     text_buf = f"(data (i32.const {initial_offset}) \""
     for byte in buf:
@@ -204,11 +211,12 @@ def generate_types(offset: int) -> Tuple[int, str, Dict[Type, int]]:
 
     return offset, text_buf, types_table
 
+
 def generate_data() -> Tuple[int, str, Dict[str, int]]:
     """
     Generates a string with the wat data instruction,
     that stores all the stings in static memory.
-    
+
     Returns a tuple of the pointer to the next byte after the end of the last string,
     the string with the wat for the data instruction and the table of strings
     "str_{string_index}" to their offsets. Or in other words (offset, buf, data_table).
@@ -223,6 +231,7 @@ def generate_data() -> Tuple[int, str, Dict[str, int]]:
         offset += len(string)
 
     return (offset, buf, data_table)
+
 
 def generate_proc_table() -> Tuple[Dict[Proc, int], str]:
     """
@@ -239,10 +248,12 @@ def generate_proc_table() -> Tuple[Dict[Proc, int], str]:
         buf += f" $addr_{proc.ip}"
     return procs_table, buf + ")"
 
+
 def get_static_size(data_offset: int) -> int:
     """Gets size of the static memory from the state and the final data offset."""
     return data_offset + Memory.global_offset +\
         State.config.size_call_stack + State.config.size_bind_stack
+
 
 def generate_globals(data_offset: int) -> str:
     """Generates a wat string, that defines the `$call_stack_ptr` and the `$bind_stack_ptr` globals."""
@@ -252,6 +263,7 @@ def generate_globals(data_offset: int) -> str:
     bind_stack = f"(global $bind_stack_ptr (mut i32) (i32.const {bind_stack_offset}))"
 
     return call_stack + bind_stack
+
 
 def generate_imports() -> str:
     """
@@ -263,12 +275,13 @@ def generate_imports() -> str:
     for name, path in State.imported_procs:
         path = " ".join(
             map(lambda x: f'"{x}"',
-            path.split(".")))
+                path.split(".")))
         param = f"(param{' i64' * len(State.procs[name].in_stack)})"
         result = f"(result{' i64' * len(State.procs[name].out_stack)})"
         buf += f"(import {path} (func $addr_{State.procs[name].ip} {param} {result}))"
 
     return buf
+
 
 def generate_call_types(call_types: List[str]) -> str:
     """
@@ -279,6 +292,7 @@ def generate_call_types(call_types: List[str]) -> str:
     for index, signature in enumerate(call_types):
         buf += f" (type $call_type_{index} {signature})"
     return buf
+
 
 def generate_wat64(ops: List[Op]) -> str:
     """Generates a string of fasm assembly for the program from the list of operations `ops`."""
@@ -292,26 +306,31 @@ def generate_wat64(ops: List[Op]) -> str:
     call_types: List[str] = []
     main_buf = '(func (export "main") '
     for op in ops:
-        if not op.compiled: continue
+        if not op.compiled:
+            continue
         if State.current_proc is not None and State.config.o_UPR:
             if State.current_proc not in State.used_procs:
                 if op.type == OpType.ENDPROC:
                     State.current_proc = None
                 continue
-        
+
         if State.current_proc is not None or op.type == OpType.DEFPROC:
-            buf += generate_op_wat64(op, offset, data_table, procs_table, call_types, types_table)
+            buf += generate_op_wat64(op, offset, data_table,
+                                     procs_table, call_types, types_table)
         else:
-            main_buf += generate_op_wat64(op, offset, data_table, procs_table, call_types, types_table)
+            main_buf += generate_op_wat64(op, offset, data_table,
+                                          procs_table, call_types, types_table)
     buf += generate_call_types(call_types)
     main_buf += ")"
     buf += main_buf + ")"
 
     return buf
 
+
 def generate_block_type_info(block: Block) -> str:
     """Generates and returns a wat string with the signature for the `block`."""
-    if not block.stack_effect: return ""
+    if not block.stack_effect:
+        return ""
 
     return f"(param{' i64' * block.stack_effect[0]}) (result{' i64' * block.stack_effect[1]})"
 
@@ -321,7 +340,7 @@ def generate_op_wat64(op: Op, offset: int, data_table: Dict[str, int],
                       types_table: Dict[Type, int]) -> str:
     """
     Genetares and returns a wat string for the operation `op`.
-    
+
     * `op` is the operation to be generated
     * `offset` is the pointer to beginning of the static memory, where the memories and variables are stored
     * `data_table` is a mapping of strings "str_{string_index}" to their offsets
@@ -344,11 +363,13 @@ def generate_op_wat64(op: Op, offset: int, data_table: Dict[str, int],
         return "(global.get $call_stack_ptr) (i64.extend_i32_u) (i64.const " +\
             f"{State.current_proc.memory_size - op.operand}) (i64.sub)"
     elif op.type == OpType.PUSH_LOCAL_VAR:
-        var_offset = State.current_proc.memory_size - State.current_proc.memories[op.operand].offset
+        var_offset = State.current_proc.memory_size - \
+            State.current_proc.memories[op.operand].offset
         return "(global.get $call_stack_ptr)" +\
             f"(i32.const {var_offset}) (i32.sub) (i64.load)"
     elif op.type == OpType.PUSH_LOCAL_VAR_PTR:
-        var_offset = State.current_proc.memory_size - State.current_proc.memories[op.operand].offset
+        var_offset = State.current_proc.memory_size - \
+            State.current_proc.memories[op.operand].offset
         return f"(global.get $call_stack_ptr) (i64.extend_i32_u) (i64.const {var_offset}) (i64.sub)"
     elif op.type == OpType.PUSH_STR:
         return \
@@ -363,7 +384,8 @@ def generate_op_wat64(op: Op, offset: int, data_table: Dict[str, int],
         State.throw_error("Syscalls are not supported for target wat64")
     elif op.type == OpType.IF:
         if State.ops_by_ips[op.operand.end].type == OpType.ELSE:
-            type_info = generate_block_type_info(State.ops_by_ips[op.operand.end].operand)
+            type_info = generate_block_type_info(
+                State.ops_by_ips[op.operand.end].operand)
         else:
             type_info = generate_block_type_info(op.operand)
         return f"(i64.const 0) (i64.ne) (if {type_info} (then"
@@ -372,7 +394,8 @@ def generate_op_wat64(op: Op, offset: int, data_table: Dict[str, int],
     elif op.type == OpType.ENDIF:
         return "))"
     elif op.type == OpType.WHILE:
-        type_info = generate_block_type_info(State.ops_by_ips[op.operand.end].operand)
+        type_info = generate_block_type_info(
+            State.ops_by_ips[op.operand.end].operand)
         return f"(i64.const 0) (i64.ne) (if {type_info} (then (loop $addr_{op.operand.start} {type_info}"
     elif op.type == OpType.ENDWHILE:
         return f"(i64.const 0) (i64.ne) (br_if $addr_{op.operand.start}))))"
@@ -388,10 +411,11 @@ def generate_op_wat64(op: Op, offset: int, data_table: Dict[str, int],
         allocation = f"(global.get $call_stack_ptr) (i32.const {op.operand.memory_size}) "
         allocation += "(i32.add) (global.set $call_stack_ptr)"
         args = "".join([f"(local.get {i})"
-            for i in range(len(op.operand.in_stack))])
+                        for i in range(len(op.operand.in_stack))])
         return f"(func {name} (param{params}) (result{results}) {allocation} {args}"
     elif op.type == OpType.ENDPROC:
-        cont_assert(State.current_proc is not None, "Bug in parsing of procedures")
+        cont_assert(State.current_proc is not None,
+                    "Bug in parsing of procedures")
         State.current_proc = None
         memory_size = State.ops_by_ips[op.operand.start].operand.memory_size
         return f"(global.get $call_stack_ptr) (i32.const {memory_size})" +\
@@ -473,7 +497,7 @@ def generate_op_wat64(op: Op, offset: int, data_table: Dict[str, int],
             buf += f"(i64.const {op.operand[0]-(i+1)*8}) (call $upcast_set) "
         return buf
     elif op.type == OpType.AUTO_INIT:
-        
+
         if State.current_proc is not None:
             var: Array = State.current_proc.variables[op.operand[0].name]
             memory = (
@@ -483,7 +507,8 @@ def generate_op_wat64(op: Op, offset: int, data_table: Dict[str, int],
         else:
             var: Array = State.variables[op.operand[0].name]
             memory = f"(i64.const {offset + op.operand[0].offset}) "
-        if var.len == 0: return ""
+        if var.len == 0:
+            return ""
         return (
             f"(i64.const 0) (loop $addr_{op.operand[1]} (param i64) (result i64) "
             f"(call $dup) (i64.const {sizeof(var.typ)}) (i64.mul) {memory} (i64.add) "
@@ -508,15 +533,19 @@ def generate_op_wat64(op: Op, offset: int, data_table: Dict[str, int],
     elif op.type == OpType.CAST:
         return ""  # Casts are type checking thing
     else:
-        cont_assert(False, f"Generation isnt implemented for op type: {op.type.name}")
+        cont_assert(
+            False, f"Generation isnt implemented for op type: {op.type.name}")
+
 
 def generate_operator_wat64(op: Op) -> str:
     """
     Generates and returns a wat string for an operation `op`,
     which must have the type `OpType.OPERATOR`.
     """
-    cont_assert(len(Operator) == 20, "Unimplemented operator in generate_operator_wat64")
-    cont_assert(op.type == OpType.OPERATOR, f"generate_operator_wat64 cant generate {op.type.name}")
+    cont_assert(len(Operator) == 20,
+                "Unimplemented operator in generate_operator_wat64")
+    cont_assert(op.type == OpType.OPERATOR,
+                f"generate_operator_wat64 cant generate {op.type.name}")
 
     if op.operand in (Operator.ADD, Operator.SUB, Operator.MUL):
         return f"(i64.{op.operand.name.lower()})"

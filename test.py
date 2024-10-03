@@ -13,9 +13,10 @@ try:
 except FileExistsError:
     tests.remove("temp")
 
-if subprocess.getstatusoutput("fasm -v")[0] == 0: # Check if fasm is installed
+if subprocess.getstatusoutput("fasm -v")[0] == 0:  # Check if fasm is installed
     print("Please install Flat Assembler (Fasm)")
     exit(1)
+
 
 @pytest.mark.parametrize("test_name", tests)
 def test(test_name):
@@ -31,7 +32,8 @@ def test(test_name):
             f.write(parts[2])
     exp_stdout = parts[1]
     if len(parts) > 3:
-        exp_stderr = parts[3].format(source_file=f"tests/temp/code_{test_name}")
+        exp_stderr = parts[3].format(
+            source_file=f"tests/temp/code_{test_name}")
     else:
         exp_stderr = ""
 
@@ -63,6 +65,7 @@ def test(test_name):
     assert stdout == exp_stdout
     assert stderr == exp_stderr
 
+
 if subprocess.getstatusoutput("node -v")[0] != 0:
     print("[OPTIONAL] Cannot run tests for wasm, please install node.js.")
 else:
@@ -80,7 +83,8 @@ else:
                 f.write(parts[2])
         exp_stdout = parts[1]
         if len(parts) > 3:
-            exp_stderr = parts[3].format(source_file=f"tests/temp/code_{test_name}_wasm")
+            exp_stderr = parts[3].format(
+                source_file=f"tests/temp/code_{test_name}_wasm")
         else:
             exp_stderr = ""
 

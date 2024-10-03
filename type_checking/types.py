@@ -6,6 +6,7 @@ from state import State, Proc, cont_assert
 
 class Type(ABC):
     """An abstract class for all cont types"""
+
     def __hash__(self) -> int:
         return hash(self.text_repr())
 
@@ -21,18 +22,19 @@ class Ptr(Type):
     A cont pointer type, where `typ` is the type the pointer to pointing to
     or None if the pointer is `ptr`.
     """
+
     def __init__(self, typ: Optional[Type] = None):
         self.typ = typ
 
     def __eq__(self, other) -> bool:
         if isinstance(other, Ptr):
             return self.typ == other.typ or other.typ is None or self.typ is None
-        
+
         return False
 
     def text_repr(self) -> str:
         return f"ptr{'_' + self.typ.text_repr() if self.typ is not None else ''}"
-    
+
     def __hash__(self) -> int:
         return hash(self.text_repr())
 
@@ -49,6 +51,7 @@ class Array(Type):
     with types. If `typ` is None, that means an array with any type of element.
     And if `len` is -1 it means an array with any length.
     """
+
     def __init__(self, len: int = -1, typ: Optional[Type] = None):
         self.len = len
         self.typ = typ
@@ -57,17 +60,17 @@ class Array(Type):
         if isinstance(other, Array):
             return (
                 (
-                    self.typ == other.typ and\
+                    self.typ == other.typ and
                     self.len == other.len or -1 in (self.len, other.len)
-                ) or\
-                other.typ is None or\
+                ) or
+                other.typ is None or
                 self.typ is None
             )
         return False
 
     def text_repr(self) -> str:
-        cont_assert(self.typ is not None, 
-            "Can't get text representation of an internal array")
+        cont_assert(self.typ is not None,
+                    "Can't get text representation of an internal array")
         return f"arr_{self.typ.text_repr()}_{self.len}"
 
     def __hash__(self) -> int:
@@ -76,6 +79,7 @@ class Array(Type):
 
 class Int(Type):
     """A cont integer type"""
+
     def __eq__(self, other) -> bool:
         return isinstance(other, Int) or other is None
 
@@ -91,13 +95,16 @@ class Addr(Type):
     A cont address type, denotes a function pointer. Has `in_types` and
     `out_types` which must match for addrs to be equal.
     """
+
     def __init__(self, in_types: List[Type], out_types: List[Type]):
         self.in_types = in_types
         self.out_types = out_types
 
     def __eq__(self, other) -> bool:
-        if other is None: return True
-        if not isinstance(other, Addr): return False
+        if other is None:
+            return True
+        if not isinstance(other, Addr):
+            return False
         return self.in_types == other.in_types and self.out_types == other.out_types
 
     def text_repr(self) -> str:
@@ -114,6 +121,7 @@ class VarType(Type):
     A cont variable type, can only be created in a function signature and
     has to be replaced by a concrete type on every call.
     """
+
     def __init__(self, name: str):
         self.name = name
 
@@ -131,10 +139,11 @@ class VarType(Type):
 class Struct(Type):
     """
     A cont structure. Used both as a type and as a container for storing data about the struct.
-    
+
     Cannot exist on the stack, but Ptr(Struct(...)) can.
     The types of fields have to be 8 bytes in length.
     """
+
     def __init__(
         self,
         name: str,
@@ -145,14 +154,18 @@ class Struct(Type):
         is_unpack: bool,
     ):
         self.name: str = name
-        self.fields: Dict[str, object] = {**fields, **(parent.fields if parent else {})}
-        self.fields_types: List[object] = [*fields_types, *(parent.fields_types if parent else {})]
+        self.fields: Dict[str, object] = {
+            **fields, **(parent.fields if parent else {})}
+        self.fields_types: List[object] = [
+            *fields_types, *(parent.fields_types if parent else {})]
         self.is_unpackable: bool = is_unpack
-        self.methods: Dict[str, Proc] = {} if parent is None else parent.methods.copy()
+        self.methods: Dict[str, Proc] = {
+        } if parent is None else parent.methods.copy()
         self.parent: Optional["Struct"] = parent
         self.children: List["Struct"] = []
         self.defaults: Dict[int, int] = defaults
-        self.static_methods: Dict[str, Proc] = {} if parent is None else parent.static_methods.copy()
+        self.static_methods: Dict[str, Proc] = {
+        } if parent is None else parent.static_methods.copy()
 
     def add_method(self, method: Proc):
         self.methods[method.name] = method
@@ -238,7 +251,8 @@ def parse_type(
         if end in name:
             end_index = name.find(end)
             if name[end_index + len(end):]:
-                State.tokens_queue.append((name[end_index + len(end):], token[1]))
+                State.tokens_queue.append(
+                    (name[end_index + len(end):], token[1]))
             name = name[:end_index]
             if not name.strip():
                 return (True, None)
@@ -264,7 +278,8 @@ def parse_type(
             if end in name:
                 end_index = name.find(end)
                 if name[end_index + len(end):]:
-                    State.tokens_queue.append((name[end_index + len(end):], loc))
+                    State.tokens_queue.append(
+                        (name[end_index + len(end):], loc))
                 name = name[:end_index]
                 State.loc = loc
                 is_ended = True
@@ -273,7 +288,8 @@ def parse_type(
         proc = State.procs[name]
         result = Addr(proc.in_stack, proc.out_stack)
     elif name in State.structures:
-        result = Ptr(State.structures[name]) if auto_ptr else State.structures[name]
+        result = Ptr(State.structures[name]
+                     ) if auto_ptr else State.structures[name]
     elif name.startswith("@") and allow_unpack:
         if name[1:] not in State.structures:
             assert not throw_exc, f'structure "{name[1:]}" was not found'
@@ -346,7 +362,8 @@ def sizeof(_type: Optional[Type]) -> int:
     elif _type is None:
         State.throw_error("Can't get size of any")
     else:
-        cont_assert(False, f"Unimplemented type in sizeof: {type_to_str(_type)}")
+        cont_assert(
+            False, f"Unimplemented type in sizeof: {type_to_str(_type)}")
 
 
 def must_ptr(_type: Optional[Type]) -> bool:
@@ -363,8 +380,10 @@ def down_cast(type1: Optional[Type], type2: Optional[Type]) -> Tuple[Optional[Ty
     the bool is False. If the bool is True the resulting type is
     non-None unless one of the input types is None.
     """
-    if type1 is None: return (type2, True)
-    if type2 is None: return (type1, True)
+    if type1 is None:
+        return (type2, True)
+    if type2 is None:
+        return (type1, True)
     if isinstance(type1, Struct) and isinstance(type2, Struct):
         type1_parents = set([type1.name])
         curr_struct = type1
@@ -381,24 +400,31 @@ def down_cast(type1: Optional[Type], type2: Optional[Type]) -> Tuple[Optional[Ty
         if type1.typ is None or type2.typ is None:
             return (Ptr(None), True)
         typ, is_succ = down_cast(type1.typ, type2.typ)
-        if not is_succ: return (None, False)
+        if not is_succ:
+            return (None, False)
         return (Ptr(typ), True)
     if isinstance(type1, Array) and isinstance(type2, Array):
-        if type1.len != type2.len: return (None, False)
+        if type1.len != type2.len:
+            return (None, False)
         typ, is_succ = down_cast(type1.typ, type2.typ)
-        if not is_succ: return (None, False)
+        if not is_succ:
+            return (None, False)
         return (Array(type1.len, typ), True)
     if isinstance(type1, Addr) and isinstance(type2, Addr):
-        if len(type1.in_types) != len(type2.in_types): return (None, False)
-        if len(type1.out_types) != len(type2.out_types): return (None, False)
+        if len(type1.in_types) != len(type2.in_types):
+            return (None, False)
+        if len(type1.out_types) != len(type2.out_types):
+            return (None, False)
         in_types, out_types = [], []
         for i, j in zip(type1.in_types, type2.in_types):
             typ, is_succ = down_cast(i, j)
-            if not is_succ: return (None, False)
+            if not is_succ:
+                return (None, False)
             in_types.append(typ)
         for i, j in zip(type1.out_types, type2.out_types):
             typ, is_succ = down_cast(i, j)
-            if not is_succ: return (None, False)
+            if not is_succ:
+                return (None, False)
             out_types.append(typ)
         return (Addr(in_types, out_types), True)
     if type1 == type2:

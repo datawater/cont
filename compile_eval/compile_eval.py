@@ -64,7 +64,8 @@ def evaluate_token(token: str, stack: list):
         stack.append(State.constants[token])
     elif token.split(".", 1)[0] in State.enums:
         parts = token.split(".", 1)
-        assert parts[1] in State.enums[parts[0]], f'enum value "{parts[1]}" is not defined'
+        assert parts[1] in State.enums[parts[0]
+                                       ], f'enum value "{parts[1]}" is not defined'
         stack.append(State.enums[parts[0]].index(parts[1]))
     else:
         State.throw_error(
@@ -76,7 +77,7 @@ def evaluate_block(orig_loc: str, error: str):
     """
     Evaluates a compile-time eval block. 
     The global token iterator should be placed at the beginning of the block.
-    
+
     The original location `orig_loc` is used for the error in case of a non-closed
     block. The `error` is used in error messages and should be the type of the block. 
     """
@@ -91,7 +92,8 @@ def evaluate_block(orig_loc: str, error: str):
         if token[0] in ("end", ";") or token[0].endswith(";"):
             if token[0].endswith(";") and token[0] != ";":
                 evaluate_token(token[0][:-1], stack)
-            assert len(stack) == 1, f"{error} block ended with {len(stack)} elements on the stack"
+            assert len(
+                stack) == 1, f"{error} block ended with {len(stack)} elements on the stack"
             return stack[0]
 
         evaluate_token(token[0], stack)

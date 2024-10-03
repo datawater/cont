@@ -4,13 +4,13 @@ import os
 
 from generating.generating import TARGETS
 
-from typing import Any, Dict, List, Tuple, Optional 
+from typing import Any, Dict, List, Tuple, Optional
 
 
 class Config:
     """
     A finalized configuration for the compiler run.
-    
+
     The object deals with loading in all the options from different source,
     verifying them and deciding what is the final value of the option.
 
@@ -18,50 +18,50 @@ class Config:
     being run from a CLI or via a function call to the entry point.
     """
     DESCRIPTIONS: Dict[str, str] = {
-        "program" : "The program to compile and optionally run",
-        "run" : "Run program after compilation",
-        "dump" : "Dump operations without compilation",
-        "dump_proc" : "Dump operations of a specific procedure",
-        "dump_tokens" : "Dump tokens without parsing or compilating",
-        "dump_tc" : "Dump operations after type checking",
-        "out" : "The name for output file(s)",
-        "target" : "A taget to compile to",
-        "config" : "Config file",
-        "stdout" : "File to output stdout of complier and program",
-        "input" : "Stdin for program",
-        "error" : "Stderr for program",
+        "program": "The program to compile and optionally run",
+        "run": "Run program after compilation",
+        "dump": "Dump operations without compilation",
+        "dump_proc": "Dump operations of a specific procedure",
+        "dump_tokens": "Dump tokens without parsing or compilating",
+        "dump_tc": "Dump operations after type checking",
+        "out": "The name for output file(s)",
+        "target": "A taget to compile to",
+        "config": "Config file",
+        "stdout": "File to output stdout of complier and program",
+        "input": "Stdin for program",
+        "error": "Stderr for program",
     }
 
     BOOL_OPTIONS: Dict[str, Tuple[List[str], bool]] = {
-        "run" : (["-r", "-run"], False),
-        "dump" : (["-d", "-dump"], False),
-        "dump_tokens" : (["-dt", "-dump_tokens"], False),
-        "dump_tc" : (["-dtc", "-dump_tc"], False),
+        "run": (["-r", "-run"], False),
+        "dump": (["-d", "-dump"], False),
+        "dump_tokens": (["-dt", "-dump_tokens"], False),
+        "dump_tc": (["-dtc", "-dump_tc"], False),
     }
 
     REGULAR_OPTIONS: Dict[str, List[str]] = {
-        "out" : (["-o", "--out"], None),
-        "target" : (["-t", "--target"], "fasm_x86_64_linux"),
-        "dump_proc" : (["-dp", "--dump_proc"], None),
-        "stdout" : (["-stdo", "--stdout"], None),
-        "input" : (["-i", "--input"], None),
-        "error" : (["-e", "--error"], None),
+        "out": (["-o", "--out"], None),
+        "target": (["-t", "--target"], "fasm_x86_64_linux"),
+        "dump_proc": (["-dp", "--dump_proc"], None),
+        "stdout": (["-stdo", "--stdout"], None),
+        "input": (["-i", "--input"], None),
+        "error": (["-e", "--error"], None),
     }
     CONFIG_REGULAR_OPTIONS: List[str] = ["out", "target"]
 
     CONFIG_BOOL_OPTIONS: Dict[str, bool] = {
-        "re_IOR" : True,
-        "re_NPD" : True,
-        "o_UPR" : True,
+        "re_IOR": True,
+        "re_NPD": True,
+        "o_UPR": True,
     }
 
     CONFIG_BOOL_CLEAR_OPTIONS: Dict[str, bool] = {
-        "struct_malloc" : True,
+        "struct_malloc": True,
     }
 
     CONFIG_INT_OPTIONS: Dict[str, int] = {
-        "size_call_stack" : 65536,
-        "size_bind_stack" : 8192,
+        "size_call_stack": 65536,
+        "size_bind_stack": 8192,
     }
 
     CHECK_POSITIVE: List[str] = ["size_call_stack", "size_bind_stack"]
@@ -146,8 +146,8 @@ class Config:
                 self.__class__, name,
                 property(
                     fget=lambda self, name=name: self.config.get(
-                        name, getattr(self.args, name) 
-                        if getattr(self.args, name) is not None 
+                        name, getattr(self.args, name)
+                        if getattr(self.args, name) is not None
                         else self.REGULAR_OPTIONS[name][1])
                 )
             )
@@ -200,7 +200,8 @@ class Config:
                         + str(self.CONFIG_INT_OPTIONS[field])
                     )
                 del self.config[field]
-                assert getattr(self, field) > 0, "Wrong default value for field"
+                assert getattr(
+                    self, field) > 0, "Wrong default value for field"
 
     @property
     def program(self) -> str:

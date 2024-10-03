@@ -5,9 +5,10 @@ from .fasm_x86_64_linux import compile_ops_fasm_x86_64_linux
 from .wat64 import compile_ops_wat64
 
 TARGETS = {
-    "fasm_x86_64_linux" : compile_ops_fasm_x86_64_linux,
-    "wat64" : compile_ops_wat64
+    "fasm_x86_64_linux": compile_ops_fasm_x86_64_linux,
+    "wat64": compile_ops_wat64
 }
+
 
 def compile_ops(ops: List[Op]):
     """Compiles for the current target, which is determined by the config."""

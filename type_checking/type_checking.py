@@ -14,7 +14,7 @@ def check_stack(stack: List[Type], expected: List[Type], arg=0):
     """
     Checks whether the types at the top of the `stack` match those
     in `expected`. If they are not throws an appropriate error.
-    
+
     The `arg` is the amount of types before the `expected`. This will only be
     used for error messages.
 
@@ -94,17 +94,17 @@ def type_check(ops: List[Op], is_main: bool = False) -> list:
     if is_main and State.config.struct_malloc[1]:
         State.loc = ""
         if "malloc" not in State.procs:
-            assert not State.config.struct_malloc[0],\
+            assert not State.config.struct_malloc[0], \
                 "Malloc procedure not found while struct_malloc is enabled"
             State.config.config["struct_malloc"] = False
         else:
             proc = State.procs["malloc"]
             if proc.in_stack != [Int()]:
-                assert not State.config.struct_malloc[0],\
+                assert not State.config.struct_malloc[0], \
                     "Malloc must take one integer, disable struct_malloc if you don't want the compiler to use malloc"
                 State.config.config["struct_malloc"] = False
             if proc.out_stack != [Ptr()]:
-                assert not State.config.struct_malloc[0],\
+                assert not State.config.struct_malloc[0], \
                     "Malloc must return one pointer, disable struct_malloc if you don't want the compiler to use malloc"
                 State.config.config["struct_malloc"] = False
         if State.config.struct_malloc[1]:
@@ -113,7 +113,7 @@ def type_check(ops: List[Op], is_main: bool = False) -> list:
     if is_main and len(State.runtimed_types_list):
         State.loc = ""
         for struct in State.TYPE_STRUCTS:
-            assert struct in State.structures,\
+            assert struct in State.structures, \
                 f"If types in runtime are used type.cn must be included from std. Structure {struct} not found."
 
     index = 0
@@ -121,7 +121,7 @@ def type_check(ops: List[Op], is_main: bool = False) -> list:
         op = ops[index]
         new_op = type_check_op(op, stack)
         if isinstance(new_op, Iterable):
-            ops[index : index + 1] = new_op
+            ops[index: index + 1] = new_op
             index += len(new_op) - 1
         elif new_op is not None:
             ops[index] = new_op
@@ -129,8 +129,8 @@ def type_check(ops: List[Op], is_main: bool = False) -> list:
         index += 1
 
     if is_main:
-        ops.extend([Op(OpType.OPERATOR, Operator.DROP) 
-            for _ in range(len(stack))])
+        ops.extend([Op(OpType.OPERATOR, Operator.DROP)
+                    for _ in range(len(stack))])
 
     return stack
 
@@ -154,7 +154,7 @@ def process_for_in(op: Op, stack: List[Type], iter_stack: list) -> list:
     return [
         Op(OpType.PUSH_INT, 0, loc=op.loc),
         Op(OpType.PUSH_INT, 1, loc=op.loc),
-        Op(OpType.WHILE, op.operand[0], loc=op.loc), # TODO:
+        Op(OpType.WHILE, op.operand[0], loc=op.loc),  # TODO:
         Op(OpType.OPERATOR, Operator.DUP, loc=op.loc),
         *op.operand[2],
         Op(
@@ -235,7 +235,8 @@ def get_concrete_type(typ: Type, var_types: Dict[int, Type]) -> Type:
     couldn't be found in the mapping.
     """
     if isinstance(typ, VarType):
-        assert id(typ) in var_types, f'Cannot obtain value for the type variable "{typ.name}"'
+        assert id(
+            typ) in var_types, f'Cannot obtain value for the type variable "{typ.name}"'
         return var_types[id(typ)]
     if isinstance(typ, Ptr):
         return Ptr(get_concrete_type(typ.typ, var_types))
@@ -289,12 +290,12 @@ def type_check_op(op: Op, stack: List[Type]) -> Optional[Union[Op, List[Op]]]:
         else:
             stack.append(State.variables[op.operand])
     elif op.type == OpType.PUSH_VAR_PTR:
-        assert not must_ptr(State.variables[op.operand]),\
+        assert not must_ptr(State.variables[op.operand]), \
             "variable is automatically a pointer, cannot push a pointer excplicitly"
         stack.append(Ptr(State.variables[op.operand]))
     elif op.type == OpType.PUSH_LOCAL_VAR:
         cont_assert(State.current_proc is not None,
-            "Probably bug in parsing with local and global variables")
+                    "Probably bug in parsing with local and global variables")
         if must_ptr(State.current_proc.variables[op.operand]):
             stack.append(Ptr(State.current_proc.variables[op.operand]))
             return Op(OpType.PUSH_LOCAL_VAR_PTR, op.operand, loc=op.loc)
@@ -302,8 +303,8 @@ def type_check_op(op: Op, stack: List[Type]) -> Optional[Union[Op, List[Op]]]:
             stack.append(State.current_proc.variables[op.operand])
     elif op.type == OpType.PUSH_LOCAL_VAR_PTR:
         cont_assert(State.current_proc is not None,
-            "Probably bug in parsing with local and global variables")
-        assert not must_ptr(State.current_proc.variables[op.operand]),\
+                    "Probably bug in parsing with local and global variables")
+        assert not must_ptr(State.current_proc.variables[op.operand]), \
             "variable is automatically a pointer, cannot push a pointer excplicitly"
 
         stack.append(Ptr(State.current_proc.variables[op.operand]))
@@ -324,10 +325,10 @@ def type_check_op(op: Op, stack: List[Type]) -> Optional[Union[Op, List[Op]]]:
         assert isinstance(struct.typ, Struct), "can't upcast non-struct"
 
         struct = struct.typ
-        assert op.operand == struct,\
+        assert op.operand == struct, \
             f"can't upcast {type_to_str(struct)} to {type_to_str(op.operand)}"
 
-        check_stack(stack, op.operand.fields_types[len(struct.fields_types) :])
+        check_stack(stack, op.operand.fields_types[len(struct.fields_types):])
 
         stack.append(Ptr(op.operand))
 
@@ -355,7 +356,8 @@ def type_check_op(op: Op, stack: List[Type]) -> Optional[Union[Op, List[Op]]]:
             op.operand.stack_effect = (len(stack), len(stack))
             check_route_stack(stack, route_stack[1])
         else:
-            check_route_stack(stack, route_stack[1], "in different routes of if-else")
+            check_route_stack(
+                stack, route_stack[1], "in different routes of if-else")
     elif op.type == OpType.WHILE:
         check_stack(stack, [Int()])
         State.route_stack.append(("while", stack.copy()))
@@ -363,7 +365,8 @@ def type_check_op(op: Op, stack: List[Type]) -> Optional[Union[Op, List[Op]]]:
         check_stack(stack, [Int()])
         pre_while_stack = State.route_stack.pop()[1]
         op.operand.stack_effect = (len(pre_while_stack), len(stack))
-        check_route_stack(stack, pre_while_stack, "in different routes of while")
+        check_route_stack(stack, pre_while_stack,
+                          "in different routes of while")
     elif op.type == OpType.FOR:
         iter_stack = type_check(op.operand[2])
         assert len(iter_stack) == 1, "iterable expression should return one value"
@@ -380,7 +383,8 @@ def type_check_op(op: Op, stack: List[Type]) -> Optional[Union[Op, List[Op]]]:
             if op.operand[2].len == 0:
                 return []
             pre_for_stack = State.route_stack.pop()[1]
-            check_route_stack(stack, pre_for_stack, "in different routes of for")
+            check_route_stack(stack, pre_for_stack,
+                              "in different routes of for")
             end_while = Op(OpType.ENDWHILE, op.operand[0], loc=op.loc)
             State.ops_by_ips[op.operand[0].end] = end_while
             return [
@@ -396,7 +400,8 @@ def type_check_op(op: Op, stack: List[Type]) -> Optional[Union[Op, List[Op]]]:
             ]
         elif op.operand[1] == "until":
             pre_for_stack = State.route_stack.pop()[1]
-            check_route_stack(stack, pre_for_stack, "in different routes of for")
+            check_route_stack(stack, pre_for_stack,
+                              "in different routes of for")
 
             if State.config.re_NPD:
                 State.locs_to_include.append(op.loc)
@@ -430,7 +435,8 @@ def type_check_op(op: Op, stack: List[Type]) -> Optional[Union[Op, List[Op]]]:
         typ = State.bind_stack[op.operand[0]]
         if op.operand[1] == "base":
             assert typ == Ptr(), "Binded value self must be a pointer to use base"
-            assert isinstance(typ.typ, Struct), "Binded value self must be a pointer to a structure to use base"
+            assert isinstance(
+                typ.typ, Struct), "Binded value self must be a pointer to a structure to use base"
             assert typ.typ.parent is not None, f'Structure "{typ.typ.name}" does not have a parent'
 
             stack.append(Ptr(typ.typ.parent))
@@ -458,7 +464,8 @@ def type_check_op(op: Op, stack: List[Type]) -> Optional[Union[Op, List[Op]]]:
     elif op.type == OpType.PACK:
         struct = State.structures[op.operand[0]]
         if not op.operand[1]:
-            cont_assert(stack.pop().typ == struct, "Probably a user now has more control over PACK (_, False)")
+            cont_assert(stack.pop().typ == struct,
+                        "Probably a user now has more control over PACK (_, False)")
         if "__init__" in struct.methods:
             args = struct.methods["__init__"].in_stack.copy()[:-1]
             State.add_proc_use(struct.methods["__init__"])
@@ -472,9 +479,9 @@ def type_check_op(op: Op, stack: List[Type]) -> Optional[Union[Op, List[Op]]]:
         assert len(stack) >= 1, "stack is too short"
         ptr = stack[-1]
         check_stack(stack, [Ptr()])
-        assert isinstance(ptr.typ, Struct),\
+        assert isinstance(ptr.typ, Struct), \
             f"can't access field of non-struct : {type_to_str(ptr.typ)}"
-        assert op.operand in (*ptr.typ.fields, *ptr.typ.methods),\
+        assert op.operand in (*ptr.typ.fields, *ptr.typ.methods), \
             f"field {op.operand} not found on {type_to_str(ptr.typ)}"
         if op.operand in ptr.typ.fields:
             offset = 0
@@ -500,9 +507,9 @@ def type_check_op(op: Op, stack: List[Type]) -> Optional[Union[Op, List[Op]]]:
                 offset += sizeof(typ)
             stack.append(Ptr(ptr.typ.fields_types[op.operand]))
             return Op(OpType.PUSH_FIELD_PTR, offset, op.loc)
-        assert isinstance(ptr.typ, Struct),\
+        assert isinstance(ptr.typ, Struct), \
             f"can't access field of non-struct : {type_to_str(ptr.typ)}"
-        assert op.operand in ptr.typ.fields,\
+        assert op.operand in ptr.typ.fields, \
             f"field {op.operand} not found on {type_to_str(ptr.typ)}"
         offset = 0
         for i, j in ptr.typ.fields.items():
@@ -514,7 +521,8 @@ def type_check_op(op: Op, stack: List[Type]) -> Optional[Union[Op, List[Op]]]:
     elif op.type == OpType.CALL_ADDR:
         assert len(stack) >= 1, "The stack is too short"
         predicate = stack.pop()
-        assert isinstance(predicate, Addr), f"Predicate must be an addr, but it's {type_to_str(predicate)}"
+        assert isinstance(
+            predicate, Addr), f"Predicate must be an addr, but it's {type_to_str(predicate)}"
         check_stack(stack, predicate.in_types.copy())
         stack.extend(predicate.out_types)
         return Op(OpType.CALL_ADDR, predicate)
@@ -531,7 +539,8 @@ def type_check_op(op: Op, stack: List[Type]) -> Optional[Union[Op, List[Op]]]:
                     return [Op(OpType.CALL, proc, op.loc)]
                 stack.pop()
         check_stack(stack, [Int(), Ptr(Array())])
-        stack.append(arr.typ.typ if op.type == OpType.INDEX else Ptr(arr.typ.typ))
+        stack.append(arr.typ.typ if op.type ==
+                     OpType.INDEX else Ptr(arr.typ.typ))
         if State.config.re_IOR:
             State.locs_to_include.append(op.loc)
         return Op(
@@ -583,10 +592,11 @@ def type_check_operator(op: Op, stack: List[Type]) -> Optional[Union[Op, List[Op
     operation with the operations in the list.
     """
 
-    cont_assert(len(Operator) == 20, "Unimplemented operator in type_check_operator")
+    cont_assert(len(Operator) == 20,
+                "Unimplemented operator in type_check_operator")
 
     if op.operand in (
-        Operator.ADD, Operator.SUB, Operator.MUL, Operator.GT, Operator.LT, 
+        Operator.ADD, Operator.SUB, Operator.MUL, Operator.GT, Operator.LT,
         Operator.EQ, Operator.LE, Operator.GE, Operator.NE,
     ):
         assert len(stack) >= 2, "stack is too short"
@@ -596,11 +606,11 @@ def type_check_operator(op: Op, stack: List[Type]) -> Optional[Union[Op, List[Op
             stack.append(Int())
         elif type1 == Ptr() and type2 == Ptr():
             if isinstance(type1.typ, Struct):
-                assert type1.typ is not None and type2.typ is not None,\
+                assert type1.typ is not None and type2.typ is not None, \
                     f"incompatible types for {op.operand.name.lower()}"
-                assert type1.typ == type2.typ or type2.typ == type1.typ,\
+                assert type1.typ == type2.typ or type2.typ == type1.typ, \
                     f"can't perform operation on different types: {type_to_str(type1.typ)} and {type_to_str(type2.typ)}"
-                assert f"__{op.operand.name.lower()}__" in type1.typ.methods,\
+                assert f"__{op.operand.name.lower()}__" in type1.typ.methods, \
                     f"method __{op.operand.name.lower()}__ not found on {type_to_str(type1.typ)}"
                 method = type1.typ.methods[f"__{op.operand.name.lower()}__"]
                 stack.extend(method.out_stack)
@@ -610,9 +620,11 @@ def type_check_operator(op: Op, stack: List[Type]) -> Optional[Union[Op, List[Op
                     Op(OpType.CALL, method, loc=op.loc),
                 ]
             else:
-                State.throw_error(f"can't perform an operation on {type_to_str(type1)} and {type_to_str(type2)}")
+                State.throw_error(
+                    f"can't perform an operation on {type_to_str(type1)} and {type_to_str(type2)}")
         else:
-            State.throw_error(f"incompatible types for {op.operand.name.lower()}")
+            State.throw_error(
+                f"incompatible types for {op.operand.name.lower()}")
     elif op.operand == Operator.DIV:
         assert len(stack) >= 2, "stack is too short"
         type2 = stack.pop()
@@ -621,10 +633,10 @@ def type_check_operator(op: Op, stack: List[Type]) -> Optional[Union[Op, List[Op
             stack.extend([Int(), Int()])
         elif type1 == Ptr() and type2 == Ptr():
             if isinstance(type1.typ, Struct):
-                assert type1.typ == type2.typ,\
+                assert type1.typ == type2.typ, \
                     f"can't perform operation on different types: {type_to_str(type1.typ)} and {type_to_str(type2.typ)}"
-                assert f"__div__" in type1.typ.methods,\
-                    f"method __div__ was not found on {type_to_str(type1.typ)}"	
+                assert f"__div__" in type1.typ.methods, \
+                    f"method __div__ was not found on {type_to_str(type1.typ)}"
                 method = type1.typ.methods[f"__div__"]
                 stack.extend(method.out_stack)
                 State.add_proc_use(method)
@@ -689,6 +701,7 @@ def type_check_operator(op: Op, stack: List[Type]) -> Optional[Union[Op, List[Op
         check_stack(stack, [Ptr()])
         stack.append(Int())
     else:
-        cont_assert(False, f"Unimplemented operator in type_check_operator {op.operand.name}")
+        cont_assert(
+            False, f"Unimplemented operator in type_check_operator {op.operand.name}")
 
     return None
