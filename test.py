@@ -46,13 +46,13 @@ def test(test_name):
         ]
     )
 
-    # os.remove(f"tests/temp/code_{test_name}.cn")
-    # os.remove(f"tests/temp/stdin_{test_name}")
-    # try:
-    #     os.remove(f"tests/temp/code_{test_name}.asm")
-    #     os.remove(f"tests/temp/code_{test_name}")
-    # except FileNotFoundError:
-    #     pass
+    os.remove(f"tests/temp/code_{test_name}.cn")
+    os.remove(f"tests/temp/stdin_{test_name}")
+    try:
+        os.remove(f"tests/temp/code_{test_name}.asm")
+        os.remove(f"tests/temp/code_{test_name}")
+    except FileNotFoundError:
+        pass
 
     with open(f"tests/results/{test_name}_stdout", "r") as f:
         stdout = f.read()
